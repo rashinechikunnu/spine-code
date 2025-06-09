@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:noteapp/project/edit.dart';
+import 'package:noteapp/project/noteview.dart';
 
 class HomePageWidget extends StatefulWidget {
   const HomePageWidget({super.key});
@@ -27,8 +28,7 @@ class _HomeWidgetState extends State<HomePageWidget> {
         child: Icon(Icons.add),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('notepad').snapshots(),
+        stream: FirebaseFirestore.instance.collection('notepad').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -39,44 +39,60 @@ class _HomeWidgetState extends State<HomePageWidget> {
           }
 
           return ListView(
-            children: snapshot.data!.docs.map((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              final docId = doc.id;
+            children:
+                snapshot.data!.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final docId = doc.id;
 
-              return ListTile(
-                title: Text(data['title'] ?? 'No Title'),
-                subtitle: Text(data['description'] ?? 'No Description'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.edit, color: Colors.green),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => EditNote(
-                              docId: docId,
-                              initialTitle: data['title'] ?? '',
-                              initialDescription: data['description'] ?? '',
-                            ),
-                          ),
-                        );
-                      },
+                  return ListTile(
+                    title: Text(data['title'] ?? 'No Title'),
+                    subtitle: Text(data['description'] ?? 'No Description'),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => ViewNote(
+                                title: data['title'] ?? '',
+                                description: data['description'] ?? '',
+                              ),
+                        ),
+                      );
+                    },
+
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit, color: Colors.green),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => EditNote(
+                                      docId: docId,
+                                      initialTitle: data['title'] ?? '',
+                                      initialDescription:
+                                          data['description'] ?? '',
+                                    ),
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            await FirebaseFirestore.instance
+                                .collection('notepad')
+                                .doc(docId)
+                                .delete();
+                          },
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: Icon(Icons.delete, color: Colors.red),
-                      onPressed: () async {
-                        await FirebaseFirestore.instance
-                            .collection('notepad')
-                            .doc(docId)
-                            .delete();
-                      },
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
           );
         },
       ),
